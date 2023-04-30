@@ -16,12 +16,23 @@ struct ContentView: View {
     @State private var imageScale: CGFloat = 1
     @State private var imageOffset: CGSize = .zero
     
+    let pages: [Page] = pagesData
+    @State private var pageId: Int = 0
+    
     // MARK: - FUNCTION
     
     func resetImageState() {
         withAnimation(.spring()) {
             imageScale = 1
             imageOffset = .zero
+        }
+    }
+    
+    func currentImage() -> String {
+        if let page = pages.first(where: {$0.id == pageId}) {
+            return page.imageName
+        } else {
+            return ""
         }
     }
     
@@ -33,7 +44,7 @@ struct ContentView: View {
                 Color.clear
                 
                 // MARK: - IMAGE
-                Image("magazine-front-cover")
+                Image(currentImage())
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .cornerRadius(10)
@@ -165,7 +176,23 @@ struct ContentView: View {
                                 isDrawerOpen.toggle()
                             }
                         })
-                    
+                    // MARK: - THUMBNAILS
+                    ForEach(pages) { page in
+                        Image(page.thumbnailName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 80)
+                            .cornerRadius(8)
+                            .shadow(radius: 4)
+                            .opacity(isDrawerOpen ? 1 : 0)
+                            .offset(y: page.id == pageId ? -8 : 0)
+                            .animation(.easeOut, value: isDrawerOpen)
+                            .animation(.spring(), value: pageId)
+                            .onTapGesture(perform: {
+                                isAnimating = true
+                                pageId = page.id
+                            })
+                    }
                     Spacer()
                 } // HStack
                     .padding(EdgeInsets(top: 16, leading: 8, bottom: 16, trailing: 8))
@@ -179,6 +206,11 @@ struct ContentView: View {
             )
         } // Navigation
         .navigationViewStyle(.stack)
+        .onAppear(perform: {
+            if pageId == 0 {
+                pageId = pages[0].id
+            }
+        })
     }
 }
 
